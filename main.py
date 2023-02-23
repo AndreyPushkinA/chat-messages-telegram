@@ -11,8 +11,8 @@ client = TelegramClient('Test', '9324313', 'e5f895ec6fa7c608a62e722a28580f26')
 client.start()
 
 async def main():
-    channel = await client.get_entity('factcheckmm')
-    start_date = datetime.datetime(2023, 2, 23)
+    channel = await client.get_entity('roman_popkov')
+    start_date = datetime.datetime(2023, 2, 2)
     end_date = datetime.datetime(2023, 2, 24)
     prefirst_m = await client.get_messages(channel, limit=1, offset_date=start_date)
     first_m = await client.get_messages(channel, min_id=prefirst_m[0].id, limit=1, reverse=True)
@@ -30,6 +30,7 @@ async def main():
             os.mkdir(channel_folder)
 
         for m in messages_between:
+            media_info = "None"
             if isinstance(m.media, MessageMediaPhoto):
                 filename = f'{channel.username}_photo_{m.id}.jpg'
                 filepath = os.path.join(channel_folder, filename)
@@ -41,6 +42,6 @@ async def main():
             writer.writerow([channel.username, m.text, m.id, m.date, media_info])
 
             print(m.text, m.date, m.id, media_info)
-
+            
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
