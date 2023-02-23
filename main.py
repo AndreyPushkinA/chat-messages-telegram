@@ -24,7 +24,7 @@ async def main():
 
     with open(f'{channel.username}_messages_{start_date.date()}_{end_date.date()}.csv', 'w', newline='', encoding='utf-16') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(['channel_name', 'text', 'message_id', 'message_date', 'media'])
+        writer.writerow(['messages'])
 
         if not os.path.exists("media"):
             os.mkdir("media")
@@ -42,12 +42,14 @@ async def main():
                     photo_data = await client.download_file(m.media)
                     fd.write(photo_data)
                 media_info = filepath
-                if m.date == time_stamp:
-                    print(m.id)
+                # if m.date == time_stamp:
+                #     print(m.id)
                 time_stamp = m.date
 
             writer.writerow([channel.username, m.text, m.id, m.date, media_info])
-            
+
+            print(m.date)
+
             # print(m.text, m.date, m.id, media_info)
 
 loop = asyncio.get_event_loop()
