@@ -11,15 +11,18 @@ client = TelegramClient('Test', '9324313', 'e5f895ec6fa7c608a62e722a28580f26')
 client.start()
 
 async def main():
-    channel = await client.get_entity('roman_popkov')
-    start_date = datetime.datetime(2023, 2, 2)
+    channel = await client.get_entity('factcheckmm')
+    start_date = datetime.datetime(2023, 2, 23)
     end_date = datetime.datetime(2023, 2, 24)
     prefirst_m = await client.get_messages(channel, limit=1, offset_date=start_date)
     first_m = await client.get_messages(channel, min_id=prefirst_m[0].id, limit=1, reverse=True)
     last_m = await client.get_messages(channel, limit=1, offset_date=end_date)
     messages_between = await client.get_messages(channel, min_id=first_m[0].id, max_id=last_m[0].id)
+    if messages_between:
+        messages_between.insert(0, last_m[0])
+        messages_between.append(first_m[0])
 
-    with open(f'{channel.username}_messages_{start_date.date()}_{end_date.date()}.csv', 'w', newline='', encoding='utf-8') as csvfile:
+    with open(f'{channel.username}_messages_{start_date.date()}_{end_date.date()}.csv', 'w', newline='', encoding='utf-16') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['channel_name', 'text', 'message_id', 'message_date', 'media'])
 
@@ -29,6 +32,7 @@ async def main():
         if not os.path.exists(channel_folder):
             os.mkdir(channel_folder)
 
+        time_stamp = ""
         for m in messages_between:
             media_info = "None"
             if isinstance(m.media, MessageMediaPhoto):
@@ -38,10 +42,13 @@ async def main():
                     photo_data = await client.download_file(m.media)
                     fd.write(photo_data)
                 media_info = filepath
+                if m.date == time_stamp:
+                    print(m.id)
+                time_stamp = m.date
 
             writer.writerow([channel.username, m.text, m.id, m.date, media_info])
-
-            print(m.text, m.date, m.id, media_info)
             
+            # print(m.text, m.date, m.id, media_info)
+
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
