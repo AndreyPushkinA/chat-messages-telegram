@@ -1,19 +1,19 @@
 import asyncio
-import csv
-import os
 import datetime
+import os
+import pandas as pd
+import pyexcel
 from telethon import TelegramClient
-from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
-from telethon.tl.types import DocumentAttributeFilename
 from telethon.errors.rpcerrorlist import MediaEmptyError
+from telethon.tl.types import DocumentAttributeFilename, MessageMediaDocument, MessageMediaPhoto
 
 client = TelegramClient('Test', '9324313', 'e5f895ec6fa7c608a62e722a28580f26')
 client.start()
 
 async def main():
-    channel = await client.get_entity('factcheckmm')
-    start_date = datetime.datetime(2023, 2, 23)
-    end_date = datetime.datetime(2023, 2, 24)
+    channel = await client.get_entity("factcheckmm")
+    start_date = datetime.datetime(2023, 2, 22)
+    end_date = datetime.datetime(2023, 2, 23)
     prefirst_m = await client.get_messages(channel, limit=1, offset_date=start_date)
     first_m = await client.get_messages(channel, min_id=prefirst_m[0].id, limit=1, reverse=True)
     last_m = await client.get_messages(channel, limit=1, offset_date=end_date)
@@ -22,35 +22,37 @@ async def main():
         messages_between.insert(0, last_m[0])
         messages_between.append(first_m[0])
 
-    with open(f'{channel.username}_messages_{start_date.date()}_{end_date.date()}.csv', 'w', newline='', encoding='utf-16') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['messages'])
+    data = []
+    if not os.path.exists("media"):
+        os.mkdir("media")
+    channel_folder = os.path.join('media', channel.username)
+    if not os.path.exists(channel_folder):
+        os.mkdir(channel_folder)
 
-        if not os.path.exists("media"):
-            os.mkdir("media")
-        channel_folder = os.path.join('media', channel.username)
-        if not os.path.exists(channel_folder):
-            os.mkdir(channel_folder)
+    time_stamp = ""
+    for m in messages_between:
+        media_info = "None"
+        if isinstance(m.media, MessageMediaPhoto):
+            filename = f'{channel.username}_photo_{m.id}.jpg'
+            filepath = os.path.join(channel_folder, filename)
+            with open(filepath, 'wb') as fd:
+                photo_data = await client.download_file(m.media)
+                fd.write(photo_data)
+            media_info = filepath
+            # if m.date == time_stamp:
+            #     print(m.id)
+            time_stamp = m.date
 
-        time_stamp = ""
-        for m in messages_between:
-            media_info = "None"
-            if isinstance(m.media, MessageMediaPhoto):
-                filename = f'{channel.username}_photo_{m.id}.jpg'
-                filepath = os.path.join(channel_folder, filename)
-                with open(filepath, 'wb') as fd:
-                    photo_data = await client.download_file(m.media)
-                    fd.write(photo_data)
-                media_info = filepath
-                # if m.date == time_stamp:
-                #     print(m.id)
-                time_stamp = m.date
+        data.append({'channel': channel.username, 'text': m.text, 'id': m.id, 'date': m.date, 'media_info': media_info})
+        print(m.date)
 
-            writer.writerow([channel.username, m.text, m.id, m.date, media_info])
-
-            print(m.date)
-
-            # print(m.text, m.date, m.id, media_info)
+    df = pd.DataFrame(data)
+    # Check which columns have timezones datetime64[ns, UTC] 
+    df.dtypes
+    # Remove timezone from columns
+    df['date'] = df['date'].dt.tz_localize(None)
+    filename = f'{channel.username}_messages_{start_date.date()}_{end_date.date()}.xlsx'
+    df.to_excel(filename, index=False)
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
