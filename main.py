@@ -29,7 +29,6 @@ async def main():
     if not os.path.exists(channel_folder):
         os.mkdir(channel_folder)
 
-    time_stamp = ""
     for m in messages_between:
         media_info = "None"
         if isinstance(m.media, MessageMediaPhoto):
@@ -39,17 +38,12 @@ async def main():
                 photo_data = await client.download_file(m.media)
                 fd.write(photo_data)
             media_info = filepath
-            # if m.date == time_stamp:
-            #     print(m.id)
-            time_stamp = m.date
 
         data.append({'channel': channel.username, 'text': m.text, 'id': m.id, 'date': m.date, 'media_info': media_info})
         print(m.date)
 
     df = pd.DataFrame(data)
-    # Check which columns have timezones datetime64[ns, UTC] 
     df.dtypes
-    # Remove timezone from columns
     df['date'] = df['date'].dt.tz_localize(None)
     filename = f'{channel.username}_messages_{start_date.date()}_{end_date.date()}.xlsx'
     df.to_excel(filename, index=False)
