@@ -11,9 +11,11 @@ client = TelegramClient('Test', '9324313', 'e5f895ec6fa7c608a62e722a28580f26')
 client.start()
 
 async def main():
-    channel = await client.get_entity("factcheckmm")
-    start_date = datetime.datetime(2023, 2, 22)
-    end_date = datetime.datetime(2023, 2, 23)
+    channel = await client.get_entity("westernnews24")
+    s_date = "2023-02-24"
+    e_date = "2023-02-24"
+    start_date = datetime.datetime.strptime(s_date, '%Y-%m-%d')
+    end_date = datetime.datetime.strptime(e_date, '%Y-%m-%d') + datetime.timedelta(days=1)
     prefirst_m = await client.get_messages(channel, limit=1, offset_date=start_date)
     first_m = await client.get_messages(channel, min_id=prefirst_m[0].id, limit=1, reverse=True)
     last_m = await client.get_messages(channel, limit=1, offset_date=end_date)
@@ -45,7 +47,10 @@ async def main():
     df = pd.DataFrame(data)
     df.dtypes
     df['date'] = df['date'].dt.tz_localize(None)
-    filename = f'{channel.username}_messages_{start_date.date()}_{end_date.date()}.xlsx'
+    if s_date == e_date:
+        filename = f'{channel.username}_{start_date.date()}.xlsx'
+    else:
+        filename = f'{channel.username}_{start_date.date()}_{end_date.date()}.xlsx'
     df.to_excel(filename, index=False)
 
 loop = asyncio.get_event_loop()
