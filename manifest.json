@@ -1,0 +1,13 @@
+{
+    "manifest_version": 2,
+    "name": "Multiply Extension",
+    "description": "A simple extension that multiplies two numbers",
+    "version": "1.0",
+    "permissions": [
+      "activeTab"
+    ],
+    "browser_action": {
+      "default_popup": "popup.html"
+    }
+  }
+  
