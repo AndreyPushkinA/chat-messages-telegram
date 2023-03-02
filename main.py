@@ -2,18 +2,20 @@ import asyncio
 import datetime
 import os
 import pandas as pd
-import pyexcel
+import dropbox
 from telethon import TelegramClient
 from telethon.errors.rpcerrorlist import MediaEmptyError
-from telethon.tl.types import DocumentAttributeFilename, MessageMediaDocument, MessageMediaPhoto
+from telethon.tl.types import MessageMediaDocument, MessageMediaPhoto
 
 client = TelegramClient('Test', '9324313', 'e5f895ec6fa7c608a62e722a28580f26')
 client.start()
+ACCESS_TOKEN = "sl.BZ006eSK2nzpL97TRLPoz-49KfhzIpWXIe1zofhkHZokORRMy1kmiHkXMZhjf-oPTyjXCItZr_ZtlActhbi3141HWhbaeUizmgvFVKJ4m6k8KZBJ6H8b_pp1Jv8RlJ4CPVmK_uz_"
+dbx = dropbox.Dropbox(ACCESS_TOKEN)
 
 async def main():
     channel = await client.get_entity("westernnews24")
-    s_date = "2023-02-24"
-    e_date = "2023-02-24"
+    s_date = "2023-03-02"
+    e_date = "2023-03-02"
     start_date = datetime.datetime.strptime(s_date, '%Y-%m-%d')
     end_date = datetime.datetime.strptime(e_date, '%Y-%m-%d') + datetime.timedelta(days=1)
     prefirst_m = await client.get_messages(channel, limit=1, offset_date=start_date)
@@ -39,7 +41,11 @@ async def main():
             with open(filepath, 'wb') as fd:
                 photo_data = await client.download_file(m.media)
                 fd.write(photo_data)
-            media_info = filepath
+            dropbox_file_path = f"/{channel.username}/{filename}"
+            with open(filepath, 'rb') as f:
+                dbx.files_upload(f.read(), dropbox_file_path)
+            shared_link = dbx.sharing_create_shared_link(dropbox_file_path)
+            media_info = shared_link.url
 
         data.append({'channel': channel.username, 'text': m.text, 'id': m.id, 'date': m.date, 'media_info': media_info})
         print(m.date)
