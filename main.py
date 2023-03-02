@@ -11,54 +11,58 @@ client.start()
 ACCESS_TOKEN = "sl.BZ1T0GMAKomJAKEWwVXDBVMfWLW05_B8w2-77fXPwvwUgKVoDj1g0QW2LieHt_ASAuEP3ne-a8j-RcG9cRkZOndNI4oa_DeWeVFmPIG75VXIienyvTTWZ97wLEG0DE1yUsX8C7Dh"
 dbx = dropbox.Dropbox(ACCESS_TOKEN)
 
-async def main():
-    channel = await client.get_entity("roman_popkov")
-    s_date = "2023-03-01"
-    e_date = "2023-03-01"
-    start_date = datetime.datetime.strptime(s_date, '%Y-%m-%d')
-    end_date = datetime.datetime.strptime(e_date, '%Y-%m-%d') + datetime.timedelta(days=1)
-    prefirst_m = await client.get_messages(channel, limit=1, offset_date=start_date)
-    first_m = await client.get_messages(channel, min_id=prefirst_m[0].id, limit=1, reverse=True)
-    last_m = await client.get_messages(channel, limit=1, offset_date=end_date)
-    messages_between = await client.get_messages(channel, min_id=first_m[0].id, max_id=last_m[0].id)
-    if messages_between:
-        messages_between.insert(0, last_m[0])
-        messages_between.append(first_m[0])
-    
-    if last_m[0].id == first_m[0].id:
-        messages_between = last_m
+try:
+    async def main():
+        channel = await client.get_entity("roman_popkov")
+        s_date = "2023-03-03"
+        e_date = "2023-03-03"
+        start_date = datetime.datetime.strptime(s_date, '%Y-%m-%d')
+        end_date = datetime.datetime.strptime(e_date, '%Y-%m-%d') + datetime.timedelta(days=1)
+        prefirst_m = await client.get_messages(channel, limit=1, offset_date=start_date)
+        first_m = await client.get_messages(channel, min_id=prefirst_m[0].id, limit=1, reverse=True)
+        last_m = await client.get_messages(channel, limit=1, offset_date=end_date)
+        messages_between = await client.get_messages(channel, min_id=first_m[0].id, max_id=last_m[0].id)
+        if messages_between:
+            messages_between.insert(0, last_m[0])
+            messages_between.append(first_m[0])
         
-    data = []
-    if not os.path.exists("media"):
-        os.mkdir("media")
-    channel_folder = os.path.join('media', channel.username)
-    if not os.path.exists(channel_folder):
-        os.mkdir(channel_folder)
+        if last_m[0].id == first_m[0].id:
+            messages_between = last_m
 
-    for m in messages_between:
-        media_info = "None"
-        if isinstance(m.media, MessageMediaPhoto):
-            filename = f'{channel.username}_photo_{m.id}.jpg'
-            filepath = os.path.join(channel_folder, filename)
-            photo_data = await client.download_file(m.media)
-            # with open(filepath, 'wb') as fd:
-            #     fd.write(photo_data)
-            dropbox_file_path = f"/{channel.username}/{filename}"
-            # with open(filepath, 'rb') as f:
-            dbx.files_upload(photo_data, dropbox_file_path)
-            shared_link = dbx.sharing_create_shared_link(dropbox_file_path)
-            media_info = shared_link.url
+        data = []
+        if not os.path.exists("media"):
+            os.mkdir("media")
+        channel_folder = os.path.join('media', channel.username)
+        if not os.path.exists(channel_folder):
+            os.mkdir(channel_folder)
 
-        data.append({'channel': channel.username, 'text': m.text, 'id': m.id, 'date': m.date, 'media_info': media_info})
-    
-    df = pd.DataFrame(data)
-    df.dtypes
-    df['date'] = df['date'].dt.tz_localize(None)
-    if s_date == e_date:
-        filename = f'{channel.username}_{start_date.date()}.xlsx'
-    else:
-        filename = f'{channel.username}_{start_date.date()}_{end_date.date()}.xlsx'
-    df.to_excel(filename, index=False)
+        for m in messages_between:
+            media_info = "None"
+            if isinstance(m.media, MessageMediaPhoto):
+                filename = f'{channel.username}_photo_{m.id}.jpg'
+                filepath = os.path.join(channel_folder, filename)
+                photo_data = await client.download_file(m.media)
+                # with open(filepath, 'wb') as fd:
+                #     fd.write(photo_data)
+                dropbox_file_path = f"/{channel.username}/{filename}"
+                # with open(filepath, 'rb') as f:
+                dbx.files_upload(photo_data, dropbox_file_path)
+                shared_link = dbx.sharing_create_shared_link(dropbox_file_path)
+                media_info = shared_link.url
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
+            data.append({'channel': channel.username, 'text': m.text, 'id': m.id, 'date': m.date, 'media_info': media_info})
+        
+        df = pd.DataFrame(data)
+        df.dtypes
+        df['date'] = df['date'].dt.tz_localize(None)
+        if s_date == e_date:
+            filename = f'{channel.username}_{start_date.date()}.xlsx'
+        else:
+            filename = f'{channel.username}_{start_date.date()}_{end_date.date()}.xlsx'
+        df.to_excel(filename, index=False)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+
+except:
+    print("No data")
