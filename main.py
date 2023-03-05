@@ -2,20 +2,23 @@ import asyncio
 import datetime
 import os
 import pandas as pd
-import dropbox
+# import dropbox
 from telethon import TelegramClient
 from telethon.tl.types import MessageMediaPhoto
 
 client = TelegramClient('Test', '9324313', 'e5f895ec6fa7c608a62e722a28580f26')
 client.start()
-ACCESS_TOKEN = "sl.BZ1T0GMAKomJAKEWwVXDBVMfWLW05_B8w2-77fXPwvwUgKVoDj1g0QW2LieHt_ASAuEP3ne-a8j-RcG9cRkZOndNI4oa_DeWeVFmPIG75VXIienyvTTWZ97wLEG0DE1yUsX8C7Dh"
-dbx = dropbox.Dropbox(ACCESS_TOKEN)
+# ACCESS_TOKEN = "sl.BZ1T0GMAKomJAKEWwVXDBVMfWLW05_B8w2-77fXPwvwUgKVoDj1g0QW2LieHt_ASAuEP3ne-a8j-RcG9cRkZOndNI4oa_DeWeVFmPIG75VXIienyvTTWZ97wLEG0DE1yUsX8C7Dh"
+# dbx = dropbox.Dropbox(ACCESS_TOKEN)
 
 try:
     async def main():
-        channel = await client.get_entity("roman_popkov")
-        s_date = "2023-03-03"
-        e_date = "2023-03-03"
+        channel_name = input("Enter channel name: ")
+        channel = await client.get_entity(channel_name)
+        s_date = input("Enter start date (YYYY-MM-DD): ")
+        e_date = input("Enter end date (YYYY-MM-DD): ")
+        # s_date = "2023-03-01"
+        # e_date = "2023-03-01"
         start_date = datetime.datetime.strptime(s_date, '%Y-%m-%d')
         end_date = datetime.datetime.strptime(e_date, '%Y-%m-%d') + datetime.timedelta(days=1)
         prefirst_m = await client.get_messages(channel, limit=1, offset_date=start_date)
@@ -42,19 +45,21 @@ try:
                 filename = f'{channel.username}_photo_{m.id}.jpg'
                 filepath = os.path.join(channel_folder, filename)
                 photo_data = await client.download_file(m.media)
-                # with open(filepath, 'wb') as fd:
-                #     fd.write(photo_data)
-                dropbox_file_path = f"/{channel.username}/{filename}"
+                with open(filepath, 'wb') as fd:
+                    fd.write(photo_data)
+                # dropbox_file_path = f"/{channel.username}/{filename}"
                 # with open(filepath, 'rb') as f:
-                dbx.files_upload(photo_data, dropbox_file_path)
-                shared_link = dbx.sharing_create_shared_link(dropbox_file_path)
-                media_info = shared_link.url
+                # dbx.files_upload(photo_data, dropbox_file_path)
+                # shared_link = dbx.sharing_create_shared_link(dropbox_file_path)
+                # media_info = shared_link.url
+                media_info = filepath
 
             data.append({'channel': channel.username, 'text': m.text, 'id': m.id, 'date': m.date, 'media_info': media_info})
         
         df = pd.DataFrame(data)
         df.dtypes
         df['date'] = df['date'].dt.tz_localize(None)
+        end_date = end_date - datetime.timedelta(days=1)
         if s_date == e_date:
             filename = f'{channel.username}_{start_date.date()}.xlsx'
         else:
